@@ -14,7 +14,24 @@ from torchvision import datasets
 import torchvision.transforms as transforms
 from PIL import Image
 from flask import Flask, jsonify, request
-from custom_dataset import *
+from torch.utils.data.dataset import Dataset
+from skimage import io
+
+class MyCustomDataset(Dataset):
+    def __init__(self, dataset, transforms=None):
+        self.transforms = transforms
+        self.dataset = dataset
+
+    def __getitem__(self, index):
+        img_path,label = self.dataset[index]# Some data read from a file or image
+        #data = Image.open(img_path)
+        data = io.imread(img_path)
+        if self.transforms is not None:
+            data = self.transforms(data)
+        return (data, label)
+
+    def __len__(self):
+        return len(self.dataset) # of how many data(images?) you have
 
 app = Flask(__name__)
 
