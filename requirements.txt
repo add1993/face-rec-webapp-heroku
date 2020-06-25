@@ -52,8 +52,8 @@ six==1.14.0
 tensorboard==2.2.1
 tensorboard-plugin-wit
 toolz==0.10.0
-torch==1.2.0
-torchvision==0.4.1
+https://download.pytorch.org/whl/cu92/torch-1.2.0%2Bcu92-cp37-cp37m-manylinux1_x86_64.whl
+https://download.pytorch.org/whl/cu92/torchvision-0.4.0%2Bcu92-cp37-cp37m-manylinux1_x86_64.whl
 tornado==6.0.4
 tqdm==4.46.0
 facenet_pytorch==2.2.9
