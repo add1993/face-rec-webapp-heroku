@@ -88,9 +88,9 @@ def crop_images(db_id):
    
 def get_dataset(db_id):
     dataset = [
-    ('./test_images_aligned/angelina_jolie/1.png', 0), 
-    ('./test_images_aligned/bradley_cooper/1.png', 1), 
-    ('./test_images_aligned/kate_siegel/1.png', 2), 
+    ('./test_images_aligned/1.png', 0), 
+    ('./test_images_aligned/2.png', 1), 
+    ('./test_images_aligned/3.png', 2), 
     ]
     return (dataset,3)
 
