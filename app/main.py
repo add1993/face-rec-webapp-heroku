@@ -180,7 +180,9 @@ def train_model(db_id):
 
 @app.route('/')
 def hello():
-    return 'Hello World!'
+    cwd = os.getcwd()
+
+    return cwd + ' Hello World!'
 
 @app.route('/train', methods=['GET', 'POST'])
 def train():
