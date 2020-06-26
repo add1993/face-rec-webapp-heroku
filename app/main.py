@@ -181,8 +181,9 @@ def train_model(db_id):
 @app.route('/')
 def hello():
     cwd = os.getcwd()
-
-    return cwd + ' Hello World!'
+    arr = os.listdir()
+    list = " ".join(arr)
+    return cwd + ' Hello World! ' + list
 
 @app.route('/train', methods=['GET', 'POST'])
 def train():
