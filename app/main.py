@@ -15,7 +15,7 @@ import torchvision.transforms as transforms
 from PIL import Image
 from flask import Flask, jsonify, request
 from torch.utils.data.dataset import Dataset
-from skimage import io
+import torchvision.transforms.functional as TF
 
 class MyCustomDataset(Dataset):
     def __init__(self, dataset, transforms=None):
@@ -24,8 +24,8 @@ class MyCustomDataset(Dataset):
 
     def __getitem__(self, index):
         img_path,label = self.dataset[index]# Some data read from a file or image
-        #data = Image.open(img_path)
-        data = io.imread(img_path)
+        data = Image.open(img_path)
+        data = TF.to_tensor(data)
         if self.transforms is not None:
             data = self.transforms(data)
         return (data, label)
@@ -99,7 +99,12 @@ def update_model(db_id, path):
     pass
 
 def get_saved_model(db_id):
-    return (None, None)
+    cwd = os.getcwd()
+    label_dict = {}
+    label_dict[0] = "angelina_jolie"
+    label_dict[1] = "bradley_cooper"
+    label_dict[2] = "kate_siegel"
+    return (cwd+'/app/', cwd+'/app/face_rec_test_final.pth', label_dict)
 
 def train_model(db_id):
     start_epoch = 0
@@ -124,7 +129,7 @@ def train_model(db_id):
                  classify=True,
                  num_classes=num_classes
             ).to(device)
-    checkpoint_path, checkpoint_file = get_saved_model(db_id)
+    checkpoint_path, checkpoint_file, label_dict = get_saved_model(db_id)
     if checkpoint_path is not None and os.path.exists(checkpoint_path):
          checkpoint = torch.load(checkpoint_file)
          model.load_state_dict(checkpoint['net'])
@@ -198,7 +203,7 @@ def train():
 def predict():
     if request.method == 'POST':
         file = request.files['file']
-        db_id = request.files['id']
+        db_id = 1
         img_bytes = file.read()
         class_id, class_name = get_prediction(db_id, image_bytes=img_bytes)
         return jsonify({'class_id': class_id, 'class_name': class_name})
