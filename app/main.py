@@ -55,7 +55,7 @@ def get_prediction(db_id, image_bytes):
     checkpoint_path, checkpoint_file, label_dict = get_saved_model(db_id)
     net = InceptionResnetV1(
                 classify=True,
-                num_classes=None
+                num_classes=3
     )
     model = net
     if checkpoint_path is not None and os.path.exists(checkpoint_path):
