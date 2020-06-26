@@ -89,9 +89,9 @@ def crop_images(db_id):
 def get_dataset(db_id):
     cwd = os.getcwd()
     dataset = [
-    (cwd + '/test_images_aligned/1.png', 0), 
-    (cwd + '/test_images_aligned/2.png', 1), 
-    (cwd + '/test_images_aligned/3.png', 2), 
+    (cwd + '/app/test_images_aligned/1.png', 0),
+    (cwd + '/app/test_images_aligned/2.png', 1),
+    (cwd + '/app/test_images_aligned/3.png', 2),
     ]
     return (dataset,3)
 
@@ -181,7 +181,7 @@ def train_model(db_id):
 @app.route('/')
 def hello():
     cwd = os.getcwd()
-    arr = os.listdir()
+    arr = os.listdir("/app/app")
     list = " ".join(arr)
     return cwd + ' Hello World! ' + list
 
