@@ -87,7 +87,7 @@ def crop_images(db_id):
     dataset = MyCustomDataset(images, crop_transform)
    
 def get_dataset(db_id):
-	cwd = os.getcwd()
+    cwd = os.getcwd()
     dataset = [
     (cwd + '/test_images_aligned/1.png', 0), 
     (cwd + '/test_images_aligned/2.png', 1), 
