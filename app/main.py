@@ -268,8 +268,6 @@ def detect():
                 entry['bbox'] = bbox[i].tolist()
             output[i] = entry
         json_data =  json.dumps(output, indent=4)
-        ff = open('log.txt', 'w')
-        ff.write(json_data)
         return json_data
 		
 @app.route('/predict', methods=['POST'])
