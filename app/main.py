@@ -1,6 +1,7 @@
 import io
 import os
 import json
+import base64
 import numpy as np
 import pandas as pd
 from facenet_pytorch import MTCNN, InceptionResnetV1, fixed_image_standardization, training
@@ -40,7 +41,7 @@ device = 'cpu'
 print('Running on device: {}'.format(device))
 #dataset = datasets.ImageFolder('./dataset/images_cropped')
 #dataset.idx_to_class = {i:c for c, i in dataset.class_to_idx.items()}
-workers = 4 
+workers = 2 
 
 def transform_image(image_bytes):
     my_transforms = transforms.Compose([
@@ -55,7 +56,7 @@ def get_prediction(db_id, image_bytes):
     checkpoint_path, checkpoint_file, label_dict = get_saved_model(db_id)
     net = InceptionResnetV1(
                 classify=True,
-                num_classes=3
+                num_classes=len(label_dict)
     )
     model = net
     if checkpoint_path is not None and os.path.exists(checkpoint_path):
@@ -64,12 +65,21 @@ def get_prediction(db_id, image_bytes):
          start_epoch = checkpoint['epoch']
 
     model.eval()
-    tensor = transform_image(image_bytes=image_bytes)
-    outputs = model.forward(tensor)
-    _, y_hat = outputs.max(1)
-    predicted_idx = y_hat.item()
-    print(predicted_idx)
-    return predicted_idx, label_dict[predicted_idx]
+    pred_idx = []
+    labels = []
+    probs = []
+    for i in range(len(images)):
+        image_bytes = images[i]
+        tensor = transform_image(image_bytes=image_bytes)
+        outputs = model(tensor)
+        probabilities = torch.nn.functional.softmax(outputs, dim=1)
+        prob_max = torch.max(probabilities)
+        score, y_hat = outputs.max(1)
+        predicted_idx = y_hat.item()
+        pred_idx.append(predicted_idx)
+        labels.append(label_dict[predicted_idx])
+        probs.append(prob_max.detach().item())
+    return pred_idx, labels, probs
 
 def crop_images(db_id):
     mtcnn = MTCNN(
@@ -110,7 +120,7 @@ def train_model(db_id):
     start_epoch = 0
     batch_size = 32
     epochs = 5
-    workers = 4
+    workers = 2
     train_transform = transforms.Compose([
              transforms.ToPILImage(),
              transforms.RandomHorizontalFlip(p=0.5),
@@ -183,6 +193,30 @@ def train_model(db_id):
     torch.save(state, save_path)
     update_model(db_id, save_path)
 
+	
+def validate_images(images):
+    mtcnn = MTCNN(
+            image_size=250, margin=0, min_face_size=40,
+             thresholds=[0.8, 0.9, 0.9], factor=0.709, post_process=True, select_largest=False,
+                 device=device
+    )
+    
+    probability = []
+    bbox = []
+    idx = 0
+    for image_bytes in images:
+        image = Image.open(io.BytesIO(image_bytes))
+        boxes, probs = mtcnn.detect(image)
+        if boxes is None:
+            print('No faces in img : '+str(idx))
+        else:
+            print(len(boxes))
+            print(probs)
+        probability.append(probs)
+        bbox.append(boxes)
+        idx = idx + 1
+    return (probability, bbox)
+	
 @app.route('/')
 def hello():
     cwd = os.getcwd()
@@ -199,14 +233,85 @@ def train():
         train_model(id)
     return jsonify({'id' : id})
 
+@app.route('/validate', methods=['POST'])
+def detect():
+    if request.method == 'POST':
+        #files = request.files.to_dict(flat=False)
+        payload = request.form.to_dict(flat=False)
+        images_b64 = payload['images']
+        ids = payload['ids']
+        
+        images = []
+        for im_b64 in images_b64:
+            im_binary = base64.b64decode(im_b64)
+            images.append(im_binary)
+        print("Received " + ' '.join(ids))
+        probability, bbox = validate_images(images)
+        output = {}
+        for i in range(len(probability)):
+            entry = {}
+            entry['id'] = ids[i]
+            if bbox[i] is None:
+                entry['detection'] = 'None'
+                entry['prob'] = 'None'
+                entry['bbox'] = 'None'
+            elif len(probability[i]) > 1:
+                entry['detection'] = 'MultiFace'
+                entry['prob'] = probability[i].tolist()
+                entry['bbox'] = bbox[i].tolist()
+            else:
+                if probability[i][0] < 0.85:
+                    entry['detection'] = 'UnclearFace'
+                else:
+                    entry['detection'] = 'FaceDetected'
+                entry['prob'] = probability[i].tolist()
+                entry['bbox'] = bbox[i].tolist()
+            output[i] = entry
+        json_data =  json.dumps(output, indent=4)
+        ff = open('log.txt', 'w')
+        ff.write(json_data)
+        return json_data
+		
 @app.route('/predict', methods=['POST'])
 def predict():
     if request.method == 'POST':
-        file = request.files['file']
-        db_id = 1
-        img_bytes = file.read()
-        class_id, class_name = get_prediction(db_id, image_bytes=img_bytes)
-        return jsonify({'class_id': class_id, 'class_name': class_name})
+        payload = request.form.to_dict(flat=False)
+        images_b64 = payload['images']
+        ids = payload['ids']
+        db_id = payload['db_id']
+        images = []
+        for im_b64 in images_b64:
+            im_binary = base64.b64decode(im_b64)
+            images.append(im_binary)
+
+        probs, bbox = validate_images(images)
+        
+        filtered_images = []
+        output = {}
+        idx = 0
+        for i in range(len(probs)):
+            if probs[i] is None:
+                entry = {}
+                entry['id'] = ids[i]
+                entry['prob'] = None
+                entry['class_id'] = None
+                entry['class_name'] = None
+                output[idx] = entry
+                idx = idx + 1
+            else:
+                filtered_images.append(images[i])
+        
+        class_id, class_name, probs = get_prediction(db_id, filtered_images)
+        for i in range(len(class_id)):
+            entry = {}
+            entry['id'] = class_id[i]
+            entry['prob'] = probs[i]
+            entry['class_id'] = class_id[i]
+            entry['class_name'] = class_name[i]
+            output[idx] = entry
+            idx = idx + 1
+        
+        return json.dumps(output)
 
 if __name__ == '__main__':
     app.run()
