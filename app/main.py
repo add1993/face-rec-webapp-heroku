@@ -233,7 +233,7 @@ def train():
         train_model(id)
     return jsonify({'id' : id})
 
-@app.route('/validate', methods=['POST'])
+@app.route('/detect', methods=['POST'])
 def detect():
     if request.method == 'POST':
         #files = request.files.to_dict(flat=False)
