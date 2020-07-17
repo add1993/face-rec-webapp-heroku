@@ -52,7 +52,7 @@ def transform_image(image_bytes):
     image = Image.open(io.BytesIO(image_bytes))
     return my_transforms(image).unsqueeze(0)
 
-def get_prediction(db_id, image_bytes):
+def get_prediction(db_id, images):
     checkpoint_path, checkpoint_file, label_dict = get_saved_model(db_id)
     net = InceptionResnetV1(
                 classify=True,
