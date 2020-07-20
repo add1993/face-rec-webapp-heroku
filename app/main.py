@@ -237,7 +237,7 @@ def train():
 def detect():
     if request.method == 'POST':
         #files = request.files.to_dict(flat=False)
-        payload = request.form.to_dict(flat=False)
+        payload = request.get_json()
         images_b64 = payload['images']
         ids = payload['ids']
         
@@ -245,7 +245,7 @@ def detect():
         for im_b64 in images_b64:
             im_binary = base64.b64decode(im_b64)
             images.append(im_binary)
-        print("Received " + ' '.join(ids))
+
         probability, bbox = validate_images(images)
         output = {}
         for i in range(len(probability)):
@@ -267,13 +267,12 @@ def detect():
                 entry['prob'] = probability[i].tolist()
                 entry['bbox'] = bbox[i].tolist()
             output[i] = entry
-        json_data =  json.dumps(output, indent=4)
-        return json_data
+        return jsonify(output)
 		
 @app.route('/predict', methods=['POST'])
 def predict():
     if request.method == 'POST':
-        payload = request.form.to_dict(flat=False)
+        payload = request.get_json()
         images_b64 = payload['images']
         ids = payload['ids']
         db_id = payload['db_id']
@@ -309,7 +308,7 @@ def predict():
             output[idx] = entry
             idx = idx + 1
         
-        return json.dumps(output)
+        return jsonify(output)
 
 if __name__ == '__main__':
     app.run()
