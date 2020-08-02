@@ -284,7 +284,7 @@ def predict():
         probs, bbox = validate_images(images)
         
         filtered_images = []
-		filtered_idxs = []
+        filtered_idxs = []
         output = []
         idx = 0
         for i in range(len(probs)):
@@ -298,7 +298,7 @@ def predict():
                 idx = idx + 1
             else:
                 filtered_images.append(images[i])
-				filtered_idxs.append(i)
+                filtered_idxs.append(i)
         
         class_id, class_name, probs = get_prediction(db_id, filtered_images)
         for i in range(len(class_id)):
