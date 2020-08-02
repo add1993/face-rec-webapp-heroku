@@ -247,7 +247,7 @@ def detect():
             images.append(im_binary)
 
         probability, bbox = validate_images(images)
-        output = {}
+        output = []
         for i in range(len(probability)):
             entry = {}
             entry['id'] = ids[i]
@@ -266,7 +266,7 @@ def detect():
                     entry['detection'] = 'FaceDetected'
                 entry['prob'] = probability[i].tolist()
                 entry['bbox'] = bbox[i].tolist()
-            output[i] = entry
+            output.append(entry)
         return jsonify(output)
 		
 @app.route('/predict', methods=['POST'])
@@ -284,7 +284,8 @@ def predict():
         probs, bbox = validate_images(images)
         
         filtered_images = []
-        output = {}
+		filtered_idxs = []
+        output = []
         idx = 0
         for i in range(len(probs)):
             if probs[i] is None:
@@ -297,15 +298,16 @@ def predict():
                 idx = idx + 1
             else:
                 filtered_images.append(images[i])
+				filtered_idxs.append(i)
         
         class_id, class_name, probs = get_prediction(db_id, filtered_images)
         for i in range(len(class_id)):
             entry = {}
-            entry['id'] = class_id[i]
+            entry['id'] = filtered_idxs[i]
             entry['prob'] = probs[i]
             entry['class_id'] = class_id[i]
             entry['class_name'] = class_name[i]
-            output[idx] = entry
+            output.append(entry)
             idx = idx + 1
         
         return jsonify(output)
