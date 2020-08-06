@@ -60,7 +60,7 @@ def get_prediction(db_id, images):
     )
     model = net
     if checkpoint_path is not None and os.path.exists(checkpoint_path):
-         checkpoint = torch.load(checkpoint_file)
+         checkpoint = torch.load(checkpoint_file, map_location=torch.device('cpu'))
          model.load_state_dict(checkpoint['net'])
          start_epoch = checkpoint['epoch']
 
