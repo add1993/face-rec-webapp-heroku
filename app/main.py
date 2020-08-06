@@ -111,9 +111,11 @@ def update_model(db_id, path):
 def get_saved_model(db_id):
     cwd = os.getcwd()
     label_dict = {}
-    label_dict[0] = "angelina_jolie"
-    label_dict[1] = "bradley_cooper"
-    label_dict[2] = "kate_siegel"
+    label_dict[0] = "Udit Dobhal"
+    label_dict[1] = "dhruv"
+    label_dict[2] = "anjit"
+    label_dict[3] = "rachit"
+    label_dict[4] = "Manjeet"
     return (cwd+'/app/', cwd+'/app/face_rec_test_final.pth', label_dict)
 
 def train_model(db_id):
