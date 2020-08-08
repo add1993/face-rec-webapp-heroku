@@ -289,7 +289,7 @@ def predict():
         filtered_idxs = []
         output = []
         idx = 0
-		transform_tensor_to_image = transforms.ToPILImage()
+        transform_tensor_to_image = transforms.ToPILImage()
         for i in range(len(probs)):
             if probs[i] is None:
                 entry = {}
@@ -300,7 +300,7 @@ def predict():
                 output[idx] = entry
                 idx = idx + 1
             else:
-				print(bbox[i][0])
+                print(bbox[i][0])
                 face = extract_face(Image.open(io.BytesIO(images[i])), bbox[i][0])
                 img = transform_tensor_to_image(face.cpu())
                 filtered_images.append(img)
