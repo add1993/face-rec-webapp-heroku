@@ -76,7 +76,7 @@ def get_prediction(db_id, images):
 
     for i in range(len(images)):
         image_i = images[i]
-        tensor = my_transforms(image_i)
+        tensor = my_transforms(image_i).unsqueeze(0)
         outputs = model(tensor)
         probabilities = torch.nn.functional.softmax(outputs, dim=1)
         prob_max = torch.max(probabilities)
