@@ -68,9 +68,15 @@ def get_prediction(db_id, images):
     pred_idx = []
     labels = []
     probs = []
+    my_transforms = transforms.Compose([
+        np.float32,
+        transforms.ToTensor(),
+        fixed_image_standardization
+    ])
+
     for i in range(len(images)):
-        image_bytes = images[i]
-        tensor = transform_image(image_bytes=image_bytes)
+        image_i = images[i]
+        tensor = my_transforms(image_i)
         outputs = model(tensor)
         probabilities = torch.nn.functional.softmax(outputs, dim=1)
         prob_max = torch.max(probabilities)
