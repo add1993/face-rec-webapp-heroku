@@ -4,7 +4,7 @@ import json
 import base64
 import numpy as np
 import pandas as pd
-from facenet_pytorch import MTCNN, InceptionResnetV1, fixed_image_standardization, training
+from facenet_pytorch import MTCNN, InceptionResnetV1, fixed_image_standardization, training, extract_face
 import torch
 from torchvision import models
 from torch.utils.data import DataLoader, SubsetRandomSampler
