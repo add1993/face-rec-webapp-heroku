@@ -122,6 +122,7 @@ def get_saved_model(db_id):
     label_dict[2] = "anjit"
     label_dict[3] = "rachit"
     label_dict[4] = "Manjeet"
+	label_dict[5] = "Ashish"
     return (cwd+'/app/', cwd+'/app/face_rec_test_final.pth', label_dict)
 
 def train_model(db_id):
