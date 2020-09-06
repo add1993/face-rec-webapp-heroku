@@ -1,5 +1,6 @@
 import io
 import os
+import gc
 import json
 import base64
 import numpy as np
@@ -85,6 +86,9 @@ def get_prediction(db_id, images):
         pred_idx.append(predicted_idx)
         labels.append(label_dict[predicted_idx])
         probs.append(prob_max.detach().item())
+
+    del net
+    gc.collect()
     return pred_idx, labels, probs
 
 def crop_images(db_id):
@@ -224,6 +228,9 @@ def validate_images(images):
         probability.append(probs)
         bbox.append(boxes)
         idx = idx + 1
+    del mtcnn
+    del images
+    gc.collect()
     return (probability, bbox)
 	
 @app.route('/')
@@ -289,7 +296,8 @@ def predict():
         for im_b64 in images_b64:
             im_binary = base64.b64decode(im_b64)
             images.append(im_binary)
-
+        del images_b64
+        gc.collect()
         probs, bbox = validate_images(images)
         
         filtered_images = []
@@ -312,8 +320,13 @@ def predict():
                 img = transform_tensor_to_image(face.cpu())
                 filtered_images.append(img)
                 filtered_idxs.append(ids[i])
-        
+
+        del images
+        gc.collect()
         class_id, class_name, probs = get_prediction(db_id, filtered_images)
+        del filtered_images
+        gc.collect()
+
         for i in range(len(class_id)):
             entry = {}
             entry['id'] = filtered_idxs[i]
