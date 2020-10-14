@@ -20,13 +20,18 @@ import torchvision.transforms.functional as TF
 
 def get_saved_model(db_id):
     cwd = os.getcwd()
+    client = MongoClient('mongodb+srv://okr:4lU5W6bEGvriS6WC@cluster0-eeqqc.mongodb.net/test')
+    db = client.aihrmdb
+    users_collection = db['users']
+    records = users_collection.find({'organizationId' : db_id})
     label_dict = {}
-    label_dict[0] = "Udit Dobhal"
-    label_dict[1] = "dhruv"
-    label_dict[2] = "anjit"
-    #label_dict[3] = "rachit"
-    label_dict[3] = "Manjeet"
-    label_dict[4] = "Ashish"
+    label_idx = 0
+    for record in records:
+        if record.get('enabled') is False:
+            continue
+        uname = record.get('fullname')
+        label_dict[label_idx] = uname
+        label_idx += 1
     return (cwd, cwd+'/face_rec_test_final.pth', label_dict)
 
 class MyCustomDataset(Dataset):
