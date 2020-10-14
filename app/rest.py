@@ -1,7 +1,7 @@
 import requests
 import base64
 
-resp = requests.get('https://demo2020-app.herokuapp.com/')
+resp = requests.get('http://0.0.0.0:5000/')
 print(resp.status_code)
 print(resp.content)
 
@@ -22,14 +22,14 @@ for im_path in im_paths:
 #print(resp.status_code)
 #print(resp.content)
 
-payload = {"images": b64_ims, "ids" : [1,2,3], "db_id" : 1}
-resp = requests.post('https://demo2020-app.herokuapp.com/detect', json=payload)
-print(resp.status_code)
-print(resp.content)
+#payload = {"images": b64_ims, "ids" : [1,2,3], "db_id" : 1}
+#resp = requests.post('https://demo2020-app.herokuapp.com/detect', json=payload)
+#print(resp.status_code)
+#print(resp.content)
 
 
 payload = {"images": b64_ims, "ids" : [1,2,3], "db_id" : 1}
-resp = requests.post('https://demo2020-app.herokuapp.com/predict', json=payload)
+resp = requests.post('http://0.0.0.0:5000/predict', json=payload)
 print(resp.status_code)
 print(resp.content)
 #myobj = {'id': 1}

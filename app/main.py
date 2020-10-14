@@ -12,12 +12,22 @@ from torch.utils.data import DataLoader, SubsetRandomSampler
 from torch import optim
 from torch.optim.lr_scheduler import MultiStepLR
 from torch.utils.tensorboard import SummaryWriter
-from torchvision import datasets
 import torchvision.transforms as transforms
 from PIL import Image
 from flask import Flask, jsonify, request
 from torch.utils.data.dataset import Dataset
 import torchvision.transforms.functional as TF
+
+def get_saved_model(db_id):
+    cwd = os.getcwd()
+    label_dict = {}
+    label_dict[0] = "Udit Dobhal"
+    label_dict[1] = "dhruv"
+    label_dict[2] = "anjit"
+    #label_dict[3] = "rachit"
+    label_dict[3] = "Manjeet"
+    label_dict[4] = "Ashish"
+    return (cwd, cwd+'/face_rec_test_final.pth', label_dict)
 
 class MyCustomDataset(Dataset):
     def __init__(self, dataset, transforms=None):
@@ -37,12 +47,28 @@ class MyCustomDataset(Dataset):
 
 app = Flask(__name__)
 
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-device = 'cpu'
-print('Running on device: {}'.format(device))
-#dataset = datasets.ImageFolder('./dataset/images_cropped')
-#dataset.idx_to_class = {i:c for c, i in dataset.class_to_idx.items()}
-workers = 2 
+#device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+#device = 'cpu'
+#print('Running on device: {}'.format(device))
+##dataset = datasets.ImageFolder('./dataset/images_cropped')
+##dataset.idx_to_class = {i:c for c, i in dataset.class_to_idx.items()}
+#workers = 1 
+#db_id = 'demo1'
+#checkpoint_path, checkpoint_file, label_dict = get_saved_model(db_id)
+#model = InceptionResnetV1(
+#            classify=True,
+#            num_classes=len(label_dict)
+#)
+#if checkpoint_path is not None and os.path.exists(checkpoint_path):
+#     checkpoint = torch.load(checkpoint_file, map_location=torch.device('cpu'))
+#     model.load_state_dict(checkpoint['net'])
+#     start_epoch = checkpoint['epoch']
+#
+#mtcnn = MTCNN(
+#        image_size=250, margin=0, min_face_size=40,
+#         thresholds=[0.8, 0.9, 0.9], factor=0.709, post_process=True, select_largest=False,
+#             device=device
+#)
 
 def transform_image(image_bytes):
     my_transforms = transforms.Compose([
@@ -54,22 +80,23 @@ def transform_image(image_bytes):
     return my_transforms(image).unsqueeze(0)
 
 def get_prediction(db_id, images):
-    checkpoint_path, checkpoint_file, label_dict = get_saved_model(db_id)
-    net = InceptionResnetV1(
-                classify=True,
-                num_classes=len(label_dict)
-    )
-    model = net
-    if checkpoint_path is not None and os.path.exists(checkpoint_path):
-         checkpoint = torch.load(checkpoint_file, map_location=torch.device('cpu'))
-         model.load_state_dict(checkpoint['net'])
-         start_epoch = checkpoint['epoch']
-
+    #checkpoint_path, checkpoint_file, label_dict = get_saved_model(db_id)
+    #model = InceptionResnetV1(
+    #            classify=True,
+    #            num_classes=len(label_dict)
+    #)
+    #if checkpoint_path is not None and os.path.exists(checkpoint_path):
+    #     checkpoint = torch.load(checkpoint_file, map_location=torch.device('cpu'))
+    #     model.load_state_dict(checkpoint['net'])
+    #     start_epoch = checkpoint['epoch']
+    model = app.model
+    label_dict = app.label_dict
     model.eval()
     pred_idx = []
     labels = []
     probs = []
     my_transforms = transforms.Compose([
+        transforms.Resize(512),
         np.float32,
         transforms.ToTensor(),
         fixed_image_standardization
@@ -86,22 +113,23 @@ def get_prediction(db_id, images):
         pred_idx.append(predicted_idx)
         labels.append(label_dict[predicted_idx])
         probs.append(prob_max.detach().item())
+        del tensor
+        del outputs
 
-    del net
     gc.collect()
     return pred_idx, labels, probs
 
 def crop_images(db_id):
-    mtcnn = MTCNN(
-            image_size=250, margin=0, min_face_size=40,
-             thresholds=[0.6, 0.7, 0.7], factor=0.709, post_process=True, select_largest=False,
-                 device=device
-    )
-    
-    resnet = InceptionResnetV1(pretrained='vggface2').eval().to(device)
-    crop_transform = transforms.Compose([
-             transforms.Resize(512)
-    ])
+    #mtcnn = MTCNN(
+    #        image_size=250, margin=0, min_face_size=40,
+    #         thresholds=[0.6, 0.7, 0.7], factor=0.709, post_process=True, select_largest=False,
+    #             device=device
+    #)
+    #
+    #resnet = InceptionResnetV1(pretrained='vggface2').eval().to(device)
+    #crop_transform = transforms.Compose([
+    #         transforms.Resize(512)
+    #])
 
     images = get_images(db_id)
     dataset = MyCustomDataset(images, crop_transform)
@@ -109,31 +137,32 @@ def crop_images(db_id):
 def get_dataset(db_id):
     cwd = os.getcwd()
     dataset = [
-    (cwd + '/app/test_images_aligned/1.png', 0),
-    (cwd + '/app/test_images_aligned/2.png', 1),
-    (cwd + '/app/test_images_aligned/3.png', 2),
+    (cwd + '/test_images_aligned/1.png', 0),
+    (cwd + '/test_images_aligned/2.png', 1),
+    (cwd + '/test_images_aligned/3.png', 2),
     ]
     return (dataset,3)
 
 def update_model(db_id, path):
     pass
 
-def get_saved_model(db_id):
-    cwd = os.getcwd()
-    label_dict = {}
-    label_dict[0] = "Udit Dobhal"
-    label_dict[1] = "dhruv"
-    label_dict[2] = "anjit"
-    label_dict[3] = "rachit"
-    label_dict[4] = "Manjeet"
-    label_dict[5] = "Ashish"
-    return (cwd+'/app/', cwd+'/app/face_rec_test_final.pth', label_dict)
+#def get_saved_model(db_id):
+#    cwd = os.getcwd()
+#    label_dict = {}
+#    label_dict[0] = "Udit Dobhal"
+#    label_dict[1] = "dhruv"
+#    label_dict[2] = "anjit"
+#    label_dict[3] = "rachit"
+#    label_dict[4] = "Manjeet"
+#    label_dict[5] = "Ashish"
+#    return (cwd, cwd+'/face_rec_test_final.pth', label_dict)
 
 def train_model(db_id):
     start_epoch = 0
     batch_size = 32
     epochs = 5
     workers = 2
+    device = app.device
     train_transform = transforms.Compose([
              transforms.ToPILImage(),
              transforms.RandomHorizontalFlip(p=0.5),
@@ -208,12 +237,13 @@ def train_model(db_id):
 
 	
 def validate_images(images):
-    mtcnn = MTCNN(
-            image_size=250, margin=0, min_face_size=40,
-             thresholds=[0.8, 0.9, 0.9], factor=0.709, post_process=True, select_largest=False,
-                 device=device
-    )
-    
+   # mtcnn = MTCNN(
+   #         image_size=250, margin=0, min_face_size=40,
+   #          thresholds=[0.8, 0.9, 0.9], factor=0.709, post_process=True, select_largest=False,
+   #              device=device
+   # )
+    mtcnn = app.mtcnn
+    mtcnn.eval()
     probability = []
     bbox = []
     idx = 0
@@ -228,17 +258,40 @@ def validate_images(images):
         probability.append(probs)
         bbox.append(boxes)
         idx = idx + 1
-    del mtcnn
     del images
     gc.collect()
     return (probability, bbox)
-	
+
+@app.before_first_request
+def load_model_to_app():
+    app.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    app.device = 'cpu'
+    print('Running on device: {}'.format(app.device))
+    workers = 1 
+    db_id = 'demo1'
+    checkpoint_path, checkpoint_file, label_dict = get_saved_model(db_id)
+    app.label_dict = label_dict
+    app.model = InceptionResnetV1(
+                classify=True,
+                num_classes=len(label_dict)
+    )
+    if checkpoint_path is not None and os.path.exists(checkpoint_path):
+         checkpoint = torch.load(checkpoint_file, map_location=torch.device('cpu'))
+         app.model.load_state_dict(checkpoint['net'])
+         start_epoch = checkpoint['epoch']
+    
+    app.mtcnn = MTCNN(
+            image_size=250, margin=0, min_face_size=40,
+             thresholds=[0.8, 0.9, 0.9], factor=0.709, post_process=True,
+             select_largest=False, device=app.device)
+
+
 @app.route('/')
 def hello():
     cwd = os.getcwd()
-    arr = os.listdir("/app/app")
-    list = " ".join(arr)
-    return cwd + ' Hello World! ' + list
+    arr = os.listdir("./")
+    ilist = " ".join(arr)
+    return cwd + ' Hello World! ' + ilist
 
 @app.route('/train', methods=['GET', 'POST'])
 def train():
@@ -339,5 +392,5 @@ def predict():
         return jsonify(output)
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=5000, debug=True, processes=1)
 
