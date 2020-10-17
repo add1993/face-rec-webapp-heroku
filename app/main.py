@@ -5,6 +5,7 @@ import json
 import base64
 import numpy as np
 import pandas as pd
+from pymongo import MongoClient
 from facenet_pytorch import MTCNN, InceptionResnetV1, fixed_image_standardization, training, extract_face
 import torch
 from torchvision import models
@@ -30,7 +31,9 @@ def get_saved_model(db_id):
         if record.get('enabled') is False:
             continue
         uname = record.get('fullname')
+        email = record.get('email')
         label_dict[label_idx] = uname
+        label_dict[str(label_idx)+'-'+str(uname)] = email
         label_idx += 1
     return (cwd, cwd+'/face_rec_test_final.pth', label_dict)
 
@@ -272,18 +275,19 @@ def load_model_to_app():
     app.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     app.device = 'cpu'
     print('Running on device: {}'.format(app.device))
-    workers = 1 
-    db_id = 'demo1'
-    checkpoint_path, checkpoint_file, label_dict = get_saved_model(db_id)
-    app.label_dict = label_dict
-    app.model = InceptionResnetV1(
-                classify=True,
-                num_classes=len(label_dict)
-    )
-    if checkpoint_path is not None and os.path.exists(checkpoint_path):
-         checkpoint = torch.load(checkpoint_file, map_location=torch.device('cpu'))
-         app.model.load_state_dict(checkpoint['net'])
-         start_epoch = checkpoint['epoch']
+    workers = 1
+    app.model = None
+    #db_id = 'demo1'
+    #checkpoint_path, checkpoint_file, label_dict = get_saved_model(db_id)
+    #app.label_dict = label_dict
+    #app.model = InceptionResnetV1(
+    #            classify=True,
+    #            num_classes=len(label_dict)
+    #)
+    #if checkpoint_path is not None and os.path.exists(checkpoint_path):
+    #     checkpoint = torch.load(checkpoint_file, map_location=torch.device('cpu'))
+    #     app.model.load_state_dict(checkpoint['net'])
+    #     start_epoch = checkpoint['epoch']
     
     app.mtcnn = MTCNN(
             image_size=250, margin=0, min_face_size=40,
@@ -350,6 +354,21 @@ def predict():
         images_b64 = payload['images']
         ids = payload['ids']
         db_id = payload['db_id']
+        if app.model is None:
+            print('DB id '+str(db_id))
+            checkpoint_path, checkpoint_file, label_dict = get_saved_model(db_id)
+            app.label_dict = label_dict
+            num_labels = int(len(label_dict)/2)
+            print('Number of classses '+ str(num_labels))
+            app.model = InceptionResnetV1(
+                        classify=True,
+                        num_classes=num_labels
+            )
+            if checkpoint_path is not None and os.path.exists(checkpoint_path):
+                 checkpoint = torch.load(checkpoint_file, map_location=torch.device('cpu'))
+                 app.model.load_state_dict(checkpoint['net'])
+                 start_epoch = checkpoint['epoch']
+    
         images = []
         for im_b64 in images_b64:
             im_binary = base64.b64decode(im_b64)
@@ -385,12 +404,15 @@ def predict():
         del filtered_images
         gc.collect()
 
+        label_dict = app.label_dict
         for i in range(len(class_id)):
             entry = {}
             entry['id'] = filtered_idxs[i]
             entry['prob'] = probs[i]
             entry['class_id'] = class_id[i]
             entry['class_name'] = class_name[i]
+            entry['db_id'] = db_id
+            entry['email'] = label_dict[str(class_id[i])+'-'+str(class_name[i])]
             output.append(entry)
             idx = idx + 1
         

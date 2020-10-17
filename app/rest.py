@@ -28,7 +28,7 @@ for im_path in im_paths:
 #print(resp.content)
 
 
-payload = {"images": b64_ims, "ids" : [1,2,3], "db_id" : 1}
+payload = {"images": b64_ims, "ids" : [1,2,3], "db_id" : 'demo'}
 resp = requests.post('http://0.0.0.0:5000/predict', json=payload)
 print(resp.status_code)
 print(resp.content)
