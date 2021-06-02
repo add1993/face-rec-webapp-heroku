@@ -55,7 +55,7 @@ https://download.pytorch.org/whl/cpu/torchvision-0.4.2%2Bcpu-cp37-cp37m-linux_x8
 tornado==6.0.4
 tqdm==4.46.0
 facenet_pytorch==2.2.9
-urllib3==1.25.8
+urllib3==1.26.5
 Werkzeug==1.0.1
 opencv-python-headless
 scikit-image
